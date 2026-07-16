@@ -68,39 +68,60 @@
          :phase :rejected
          :error (str "Hard governance violation: " (-> state :decision :violations))))
 
+(defn- route-on-phase
+  "Conditional-edges router: reads the :phase the :decide node just set
+  and dispatches to the matching terminal-or-continuing node. Mirrors
+  the fleet-wide 'commit / request-approval / hold' 3-way routing every
+  other governed actor in this fleet already uses."
+  [state]
+  (:phase state))
+
 (defn build-graph
-  "Build and compile the StateGraph for the officer admin actor."
+  "Build and compile the StateGraph for the officer admin actor, against
+  the REAL `langgraph.graph` API (`state-graph`/`add-node`/`add-edge`/
+  `add-conditional-edges`/`set-entry-point`/`set-finish-point`/
+  `compile-graph`) — not `graph/state-graph-builder`, a function that
+  does not exist anywhere in `kotoba-lang/langgraph`'s history (verified
+  directly against its source; the earlier version of this file called
+  it and would throw on first use, but no test in this repo ever
+  exercised this namespace to catch it)."
   [advisor-instance store-instance]
-  (let [graph-def (graph/state-graph-builder
-                    {:initial :intake
-                     :nodes {:intake (fn [s] (intake-node s))
-                             :advise (fn [s] (advise-node s advisor-instance))
-                             :govern (fn [s] (govern-node s store-instance))
-                             :decide (fn [s] (decide-node s))
-                             :commit (fn [s] (commit-node s store-instance))
-                             :request-approval (fn [s] (request-approval-node s))
-                             :hold (fn [s] (hold-node s))}
-                     :edges [{:from :intake :to :advise}
-                             {:from :advise :to :govern}
-                             {:from :govern :to :decide}
-                             {:from :decide :to :commit}
-                             {:from :decide :to :request-approval}
-                             {:from :decide :to :hold}]
-                     :end-nodes [:complete :awaiting-approval :rejected]})]
-    graph-def))
+  (-> (graph/state-graph)
+      (graph/add-node :intake intake-node)
+      (graph/add-node :advise (fn [s] (advise-node s advisor-instance)))
+      (graph/add-node :govern (fn [s] (govern-node s store-instance)))
+      (graph/add-node :decide decide-node)
+      (graph/add-node :commit (fn [s] (commit-node s store-instance)))
+      (graph/add-node :request-approval request-approval-node)
+      (graph/add-node :hold hold-node)
+      (graph/set-entry-point :intake)
+      (graph/add-edge :intake :advise)
+      (graph/add-edge :advise :govern)
+      (graph/add-edge :govern :decide)
+      (graph/add-conditional-edges :decide route-on-phase
+                                    {:commit :commit
+                                     :request-approval :request-approval
+                                     :hold :hold})
+      (graph/set-finish-point :commit)
+      (graph/set-finish-point :request-approval)
+      (graph/set-finish-point :hold)
+      (graph/compile-graph)))
 
 (defn run-request!
-  "Run an administrative request through the actor graph.
-   Returns the final state."
-  [graph initial-request context store]
+  "Run an administrative request through the REAL compiled actor graph
+  (`graph` from `build-graph`) via `langgraph.graph/invoke`. Returns the
+  final state — `:phase` is `:complete` (committed), `:awaiting-approval`
+  (escalated, needs `approve!`), or `:rejected` (hard hold, terminal)."
+  [graph initial-request context _store]
   (let [state (assoc default-state :request initial-request :context context)]
-    ; In a real implementation, this would invoke the compiled graph
-    ; with checkpointing support for human-in-the-loop escalations.
-    ; For now, return the state with a note that full graph is needed.
-    (assoc state :stub true :reason "full langgraph.graph requires runtime binding")))
+    (graph/invoke graph state)))
 
 (defn approve!
-  "Approve a request that was held in :request-approval phase.
-   Human sign-off for escalation invariants."
+  "Approve a request that was held in :request-approval/:awaiting-approval
+  phase — the human sign-off step for escalation invariants. Genuinely
+  commits the record (via the same `commit-node` the graph itself uses,
+  so the append-only ledger actually gets the entry either way — the
+  earlier version of this fn only flipped `:phase`, silently never
+  writing anything to `store`)."
   [state approval-context store]
-  (assoc state :phase :commit :approval approval-context))
+  (commit-node (assoc state :phase :commit :approval approval-context) store))
