@@ -48,12 +48,27 @@
       true                   (assoc state :phase :commit))))
 
 (defn- commit-node
-  "Commit node: Store the proposal as a record."
+  "Commit node: persist the proposal to the REAL append-only audit ledger
+  via `officer-admin.store/add-record!` — `store-instance` was previously
+  accepted as a parameter but never used, so a run's commit was only ever
+  written to this langgraph graph's transient `:records` state (discarded
+  once the run's return value goes out of scope) and never reached the
+  store's actual ledger. `add-record!` returns a NEW store (the store is
+  an immutable/persistent `MemStore`, it does not mutate in place), so
+  that returned store — now durably carrying the record — is threaded
+  into the graph state under `:store` so callers can inspect the real
+  ledger via `(store/records (:store final))`. `:records` is left in
+  place unchanged for backward compatibility with existing callers/tests
+  that read the transient mirror."
   [state store-instance]
   (let [proposal (:proposal state)
-        op (:op proposal)]
+        request (:request state)
+        op (:op proposal)
+        store' (store/add-record! store-instance op
+                                   {:officer-id (:officer-id request)
+                                    :proposal proposal})]
     (-> state
-        (assoc :phase :complete)
+        (assoc :phase :complete :store store')
         (update :records (fn [r] (conj (or r []) {:recorded true :op op}))))))
 
 (defn- request-approval-node
