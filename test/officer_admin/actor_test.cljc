@@ -27,7 +27,14 @@
       (is (= :complete (:phase final)))
       (is (= [{:recorded true :op :log-readiness-report}] (:records final)))
       (is (false? (:hard? (:decision final))))
-      (is (false? (:escalate? (:decision final)))))))
+      (is (false? (:escalate? (:decision final))))
+      (testing "the commit is genuinely durable in the store's real audit
+                ledger (`officer-admin.store/add-record!`), not just the
+                transient graph-state `:records` mirror"
+        (let [ledger (store/records (:store final))]
+          (is (= 1 (count ledger)))
+          (is (= :log-readiness-report (:type (first ledger))))
+          (is (= "off-001" (:officer-id (first ledger)))))))))
 
 (deftest run-request-holds-unregistered-officer
   (testing "an unregistered officer is a HARD violation -- the real graph
@@ -59,7 +66,11 @@
       (let [approved (actor/approve! held {:approver "cmdr-002"} st)]
         (is (= :complete (:phase approved)))
         (is (= [{:recorded true :op :draft-correspondence}] (:records approved)))
-        (is (= {:approver "cmdr-002"} (:approval approved)))))))
+        (is (= {:approver "cmdr-002"} (:approval approved)))
+        (testing "approve! also genuinely persists to the real audit ledger"
+          (let [ledger (store/records (:store approved))]
+            (is (= 1 (count ledger)))
+            (is (= :draft-correspondence (:type (first ledger))))))))))
 
 (deftest run-request-low-confidence-escalates
   (testing "confidence below the governor's floor also escalates, even
