@@ -51,7 +51,7 @@
   (register-unit! [this unit-id unit-data]
     (MemStore. officers (assoc units unit-id unit-data) ledger))
   (add-record! [this record-type record-data]
-    (let [record (assoc record-data :type record-type :timestamp (System/currentTimeMillis))]
+    (let [record (assoc record-data :type record-type :timestamp #?(:clj (System/currentTimeMillis) :cljs (.getTime (js/Date.))))]
       (MemStore. officers units (conj ledger record))))
   (records [this]
     ledger))
@@ -87,7 +87,7 @@
     (d/transact! conn [{:unit/id unit-id :unit/payload (ls/enc unit-data)}])
     s)
   (add-record! [s record-type record-data]
-    (let [record (assoc record-data :type record-type :timestamp (System/currentTimeMillis))]
+    (let [record (assoc record-data :type record-type :timestamp #?(:clj (System/currentTimeMillis) :cljs (.getTime (js/Date.))))]
       (ls/append-blob! conn :record/seq :record/payload (count (records s)) record))
     s)
   (records [_]
