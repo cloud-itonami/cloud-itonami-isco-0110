@@ -77,7 +77,8 @@
 
   Usage: `clojure -M:render-html [out-file]` (default
   `docs/samples/operator-console.html`)."
-  (:require [clojure.string :as str]
+  (:require [jp-go-dds.skin]
+            [clojure.string :as str]
             [officer-admin.store :as store]
             [officer-admin.advisor :as advisor]
             [officer-admin.actor :as actor]))
@@ -196,17 +197,7 @@
    "<!doctype html>\n<html><head><meta charset=\"utf-8\">"
    "<title>Officer Admin Operator Console — cloud-itonami-isco-0110</title>"
    "<style>"
-   "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:2rem;color:#1c1c1e;background:#fff}"
-   "h1{font-size:1.4rem}h2{font-size:1.1rem;margin-top:2rem}"
-   "table{border-collapse:collapse;width:100%;margin:0.5rem 0 1rem}"
-   "th,td{border:1px solid #d0d0d5;padding:0.4rem 0.6rem;text-align:left;font-size:0.92rem}"
-   "th{background:#f5f5f7}"
-   "code{font-family:ui-monospace,Menlo,monospace;font-size:0.85rem}"
-   ".ok{color:#1a7f37;font-weight:600}"
-   ".warn{color:#9a6700;font-weight:600}"
-   ".critical{color:#b91c1c;font-weight:600}"
-   ".muted{color:#6e6e73}"
-   ".banner{background:#f5f5f7;border-radius:8px;padding:0.8rem 1rem;margin-bottom:1.5rem;font-size:0.9rem}"
+   (jp-go-dds.skin/dds+skin)
    "</style></head><body>"
    "<h1>Officer Admin Operator Console</h1>"
    "<div class=\"banner\">Build-time render of the REAL <code>officer-admin.actor</code> "
