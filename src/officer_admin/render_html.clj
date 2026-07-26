@@ -200,13 +200,13 @@
    (jp-go-dds.skin/dds+skin)
    "</style></head><body>"
    "<h1>Officer Admin Operator Console</h1>"
-   "<div class=\"banner\">Build-time render of the REAL <code>officer-admin.actor</code> "
+   "<div class=\"dads-notification-banner\" data-style=\"standard\" data-type=\"info-2\"><h2 class=\"dads-notification-banner__heading\"><svg class=\"dads-notification-banner__icon\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" role=\"img\" aria-label=\"インフォメーション\"><circle cx=\"12\" cy=\"12\" r=\"10\" fill=\"currentcolor\"/><circle cx=\"12\" cy=\"8\" r=\"1\" fill=\"Canvas\"/><path d=\"M11 11h2v6h-2z\" fill=\"Canvas\"/></svg><span class=\"dads-notification-banner__heading-text\">この画面について</span></h2><div class=\"dads-notification-banner__body\"><p>Build-time render of the REAL <code>officer-admin.actor</code> "
    "StateGraph (<code>officer-admin.governor</code> &rarr; <code>officer-admin.store</code>), "
    "generated deterministically by <code>officer_admin.render-html</code>. No invented data: "
    "seed officer <code>off-001</code> is verbatim from the repo's own test fixture; "
    "<code>off-002</code> is a disclosed demo addition via the store's real API. "
    "See the namespace docstring in <code>src/officer_admin/render_html.clj</code> for full "
-   "disclosure of seed provenance and honestly-unreachable governor rules.</div>"
+   "disclosure of seed provenance and honestly-unreachable governor rules.</p></div></div>"
    "<h2>Registered entities (real store state)</h2>"
    (entities-table store)
    "<h2>Governance action gate (officer-admin.governor/check contract)</h2>"
