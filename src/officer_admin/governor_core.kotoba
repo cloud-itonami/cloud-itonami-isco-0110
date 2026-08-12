@@ -1,0 +1,84 @@
+;; OfficerAdminGovernor's DECISION CORE — the containment rule, as Kotoba.
+;;
+;; `governor.cljc` keeps everything that is not the judgement: reading the
+;; officer record out of the `Store`, the keyword sets that say which ops are
+;; forbidden and which escalate, the readiness and duty-status lookups, and the
+;; violation maps a caller reads. Those are effects, collections and prose.
+;;
+;; What is here is the verdict. It matters because this is a safety layer: the
+;; actor may not write past what the governor allows, and three of the inputs
+;; are permanent refusals -- an unregistered officer, an effect that is not
+;; `:propose`, and an operation outside the permitted scope (personnel
+;; deployment, command authority, weapons/targeting, classified operations,
+;; lethal decisions).
+;;
+;; A hard violation is NOT an escalation. There is nothing to escalate to: a
+;; human cannot approve a proposal the scope boundary forbids, so `escalate?`
+;; is false whenever `hard?` is true, and the verdict code carries that.
+;;
+;; Confidence crosses as permille so the comparison is integer; the facade
+;; multiplies. `0.6` is `600`.
+;;
+;; Parity: test/officer_admin/governor_core_parity_test.clj
+
+(ns governor-core
+  (:schemas {;; What the facade has already established about one proposal.
+             ;; A record because a bare `:bool` parameter is still refused
+             ;; (ADR-0219) while `:bool` FIELDS have always worked.
+             :governor/assessment
+             [:record :governor/assessment
+              [[:officer-registered :bool]
+               [:effect-is-propose :bool]
+               [:op-forbidden :bool]
+               [:confidence-milli :i64]
+               [:op-escalating :bool]
+               [:readiness-below-threshold :bool]
+               [:leave-during-active-status :bool]]]})
+  (:export [verdict-hold verdict-escalate verdict-ok confidence-floor-milli
+            hard? low-confidence? escalation-ground? escalate? ok? verdict main]))
+
+(defn verdict-hold [] :i64 0)
+(defn verdict-escalate [] :i64 1)
+(defn verdict-ok [] :i64 2)
+
+(defn confidence-floor-milli [] :i64
+  ;; 0.6 in the cljc. Permille here so the comparison is integer.
+  600)
+
+(defn hard? [a [:ref :governor/assessment]] :bool
+  ;; Any one of the three permanent refusals. Spelled out rather than folded so
+  ;; that adding a fourth is a visible edit here and in the parity corpus.
+  (if (record-get a :officer-registered)
+    (if (record-get a :effect-is-propose)
+      (if (record-get a :op-forbidden) true false)
+      true)
+    true))
+
+(defn low-confidence? [a [:ref :governor/assessment]] :bool
+  ;; Strictly below the floor: a proposal exactly at 0.6 is not low.
+  (< (record-get a :confidence-milli) (confidence-floor-milli)))
+
+(defn escalation-ground? [a [:ref :governor/assessment]] :bool
+  ;; Any reason a human must sign off, ignoring whether a hard violation has
+  ;; already settled it.
+  (if (low-confidence? a)
+    true
+    (if (record-get a :op-escalating)
+      true
+      (if (record-get a :readiness-below-threshold)
+        true
+        (if (record-get a :leave-during-active-status) true false)))))
+
+(defn escalate? [a [:ref :governor/assessment]] :bool
+  ;; A hard violation is not an escalation -- there is nothing to escalate to.
+  (if (hard? a) false (escalation-ground? a)))
+
+(defn ok? [a [:ref :governor/assessment]] :bool
+  (if (hard? a) false (if (escalation-ground? a) false true)))
+
+(defn verdict [a [:ref :governor/assessment]] :i64
+  (if (hard? a)
+    (verdict-hold)
+    (if (escalation-ground? a) (verdict-escalate) (verdict-ok))))
+
+(defn main [] :i64 0)
