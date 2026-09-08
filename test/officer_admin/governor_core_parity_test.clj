@@ -17,7 +17,7 @@
   2^6 flag combinations x four confidences = 256 rows, exhausted. A verdict
   table is exactly the shape where sampling checks the rows someone already
   thought of."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [clojure.test :refer [deftest is testing]]
             [officer-admin.governor :as governor]
             [officer-admin.store :as store]
