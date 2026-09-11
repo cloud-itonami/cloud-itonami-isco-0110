@@ -75,7 +75,7 @@
       displays exactly that real returned state and does not claim
       ledger persistence that the code does not perform.
 
-  Usage: `clojure -M:render-html [out-file]` (default
+  Usage: `kbb -M:render-html [out-file]` (default
   `docs/samples/operator-console.html`)."
   (:require [jp-go-dds.skin]
             [kotoba.lang.text :as str]
