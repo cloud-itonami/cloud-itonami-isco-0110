@@ -1,0 +1,33 @@
+;; What this vertical's robot physically does, declared for
+;; kotoba.robotics.process (kotoba-lang/robotics). `kbb -M:physics` runs it.
+;;
+;; README "Robotics premise": a document-handling and coordination robot
+;; manages training schedules, readiness reporting and administrative
+;; correspondence for commissioned officers (ISCO 0110). Its physical work is
+;; moving paper: filing binders from an intake tray onto archive shelving, and
+;; carrying boxed records between the orderly room and the registry.
+;;
+;; Every number without a cited source is marked `estimate` in its :basis.
+;; Replacing an estimate with a sourced value is this bot's growth work.
+{:physics/schema "itonami.physical-ai.spec.v1"
+ :repo "cloud-itonami/cloud-itonami-isco-0110"
+ :cases
+ [{:id :file-binder-to-shelf
+   :kind :manipulator
+   :procedure "arm lifts a ring binder from the intake tray to an archive shelf"
+   :params {:l1-m 0.45 :l2-m 0.40 :m1-kg 3.5 :m2-kg 2.5
+            :from [0.55 0.05] :to [0.20 0.70] :duration-s 2.5 :steps 500}
+   :sweep {:param :payload-kg :values [0.5 1.0 2.0 3.0 4.0]}
+   :quantity :peak-tau1-nm
+   :limit {:max 60.0 :basis "estimate: continuous shoulder torque of a light collaborative arm (~5 kg class)"}
+   :boundary {:lo 0.1 :hi 20.0}}
+  {:id :records-box-courier
+   :kind :transport
+   :procedure "courier robot carries a box of paper records from the orderly room to the registry"
+   :params {:mass-kg 45.0 :distance-m 60.0 :v-max-mps 1.0 :a-max-mps2 0.5
+            :brake-decel-mps2 0.8 :drive-force-n 90.0 :crr 0.02
+            :cog-height-m 0.55 :support-half-length-m 0.25}
+   :sweep {:param :payload-kg :values [5.0 10.0 15.0 25.0 40.0]}
+   :quantity :cycle-time-s
+   :limit {:max 75.0 :basis "estimate: one corridor leg within the unit's 5-minute document-turnaround target, allowing for doors and lifts"}
+   :boundary {:lo 1.0 :hi 400.0}}]}
