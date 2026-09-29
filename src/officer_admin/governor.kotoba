@@ -4,7 +4,7 @@
   Wired as its own `:govern` node in `officer-admin.actor`'s StateGraph,
   downstream of `:advise` — the Advisor has no notion of officer provenance
   or administrative risk, so this MUST be a separate system able to reject
-  a proposal (itonami actor pattern, per ADR-2607011000 / CLAUDE.md Actors
+  a proposal (itonami actor pattern, per ADR-2607011000 / AGENTS.md Actors
   section).
 
   `check` is a pure function of (request, context, proposal, store) ->

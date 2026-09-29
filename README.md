@@ -68,7 +68,7 @@ See [`docs/business-model.md`](docs/business-model.md) and
 
 ## Reference implementation (`:maturity :implemented`)
 
-Full itonami Actor pattern (per ADR-2607011000 / CLAUDE.md's Actors
+Full itonami Actor pattern (per ADR-2607011000 / AGENTS.md's Actors
 section): a real
 [`kotoba-lang/langgraph`](https://github.com/kotoba-lang/langgraph)
 `StateGraph`, with the Advisor and Governor as distinct graph nodes and
