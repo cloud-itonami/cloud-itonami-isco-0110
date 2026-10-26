@@ -37,7 +37,7 @@ io.github.kotoba-lang/langgraph
 ;; offline workspace dev -- pin transitive langchain to local checkout
   :dev {:override-deps
         {io.github.kotoba-lang/langchain
-         {:local/root "../../kotoba-lang/langchain"}}}
+        {:local/root "../../kotoba-lang/kotoba/lib/kotoba.langchain"}}}
   :test {:extra-paths ["test"]
          ;; amu is TEST-ONLY, for the governor parity gate: it compiles
          ;; `src/officer_admin/governor_core.kotoba` and runs it against
